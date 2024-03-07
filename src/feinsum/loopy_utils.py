@@ -526,14 +526,13 @@ def match_einsum(t_unit: lp.TranslationUnit,
         print(type(insn.expression.expr))
         print(type(insn.expression.expr.children))
         print(type(flatten(insn.expression.expr)))
-
+    """
     def get_child_list(arg):
         flattened = flatten(arg)
         if hasattr(flattened, "children"):
             return flattened.children
         else:
             return [flattened]
-    """
     """
     access_descrs_for_insns = {
         tuple(
