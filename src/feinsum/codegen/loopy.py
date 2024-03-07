@@ -21,7 +21,8 @@ from feinsum.einsum import (FusedEinsum, FreeAxis, SummationAxis,
                             get_trivial_contraction_schedule)
 from feinsum.make_einsum import fused_einsum
 from more_itertools import zip_equal as szip
-from immutables import Map
+#from immutables import Map
+from immutabledict import immutabledict as Map
 
 
 LOOPY_LANG_VERSION = (2018, 2)
