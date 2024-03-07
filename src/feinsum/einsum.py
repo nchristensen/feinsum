@@ -26,7 +26,8 @@ from __future__ import annotations
 import abc
 import numpy as np
 
-from immutables import Map
+#from immutables import Map
+from immutabledict import immutabledict as Map
 from typing import Union, Tuple, Any, FrozenSet, List
 from dataclasses import dataclass
 from functools import cached_property

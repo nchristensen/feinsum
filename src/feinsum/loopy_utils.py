@@ -14,7 +14,8 @@ import pymbolic.primitives as p
 
 from multiset import Multiset
 from typing import Union, ClassVar, Optional, Tuple, FrozenSet, Any, Dict, List
-from immutables import Map
+#from immutables import Map
+from immutabledict import immutabledict as Map
 from dataclasses import dataclass
 from more_itertools import zip_equal as szip
 from pymbolic.interop.matchpy.tofrom import (
@@ -518,12 +519,58 @@ def match_einsum(t_unit: lp.TranslationUnit,
     for i, iname in enumerate(redn_indices):
         iname_to_access_descr[iname] = SummationAxis(i)
 
+    """
+    print("INSTRUCTION TYPES")
+    for insn in insns:
+        print(type(insn.expression))
+        print(type(insn.expression.expr))
+        print(type(insn.expression.expr.children))
+        print(type(flatten(insn.expression.expr)))
+
+    def get_child_list(arg):
+        flattened = flatten(arg)
+        if hasattr(flattened, "children"):
+            return flattened.children
+        else:
+            return [flattened]
+    """
+    """
     access_descrs_for_insns = {
         tuple(
             tuple(iname_to_access_descr[idx.name]
-                  for idx in child.index_tuple)
-            for child in flatten(insn.expression.expr).children)
+                  for idx in child.index_tuple if hasattr(idx, "name"))
+            for child in get_child_list(insn.expression.expr))#flatten(insn.expression.expr).children)
         for insn in insns}
+    """
+    #"""
+    access_descrs_for_insns = set()
+    for insn in insns:
+        flattened = flatten(insn.expression.expr)
+        if hasattr(flattened, "children"):
+            iterable = flattened.children
+        else:
+            iterable = [flattened]
+        """
+        #print(iterable)
+        for child in get_child_list(insn.expression.expr):
+            print(type(child))
+            import pymbolic
+            if isinstance(child, pymbolic.primitives.If):
+                #print(child.condition.index_tuple)
+                print(child.then.index_tuple)
+                print(child.else_.index_tuple)
+            for idx in child.index_tuple:
+                print(type(idx), idx)
+        """
+        tup_tup = tuple(
+            tuple(iname_to_access_descr[idx.name]
+                  for idx in child.index_tuple if hasattr(idx, "name"))
+            for child in get_child_list(insn.expression.expr) if hasattr(child, "index_tuple"))
+        access_descrs_for_insns.add(tup_tup)
+    #"""
+    print(access_descrs_for_insns)
+    for entry in access_descrs_for_insns:
+        print(entry)
     if len(access_descrs_for_insns) != 1:
         raise ValueError("access pattern across instructions not uniform")
 
@@ -531,12 +578,12 @@ def match_einsum(t_unit: lp.TranslationUnit,
 
     use_matrix = tuple(
         tuple(frozenset([child.aggregate.name])
-              for child in flatten(insn.expression.expr).children)
+              for child in get_child_list(insn.expression.expr) if hasattr(child, "aggregate"))#flatten(insn.expression.expr).children)
         for insn in insns
     )
     all_values = {child.aggregate.name
                   for insn in insns
-                  for child in flatten(insn.expression.expr).children}
+                  for child in get_child_list(insn.expression.expr) if hasattr(child, "aggregate")}#flatten(insn.expression.expr).children}
 
     value_to_dtype = Map(
         {val: kernel.arg_dict.get(val, kernel.temporary_variables.get(val)).dtype
@@ -549,7 +596,7 @@ def match_einsum(t_unit: lp.TranslationUnit,
                   if (isinstance(dim, int) and (dim < long_dim_length))
                   else np.inf
                   for dim in kernel.get_var_descriptor(child.aggregate.name).shape)
-            for child in flatten(insn.expression.expr).children)
+            for child in get_child_list(insn.expression.expr) if hasattr(child, "aggregate"))#flatten(insn.expression.expr).children)
         for insn in insns
     }
 

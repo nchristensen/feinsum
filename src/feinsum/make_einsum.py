@@ -40,7 +40,8 @@ import numpy.typing as npt
 from typing import (Tuple, Protocol, Any, List, Sequence, Optional, Mapping,
                     FrozenSet, Union, Dict)
 from dataclasses import dataclass
-from immutables import Map
+#from immutables import Map
+from immutabledict import immutabledict as Map
 from feinsum.einsum import (FusedEinsum, FreeAxis,
                             SummationAxis, EinsumAxisAccess, VeryLongAxis,
                             INT_CLASSES, IntegralT, SizeParam)
@@ -92,7 +93,7 @@ def _preprocess_shape(shape: Any) -> ShapeT:
     if not isinstance(shape, Sequence):
         shape = shape,
 
-    return tuple(_preprocess_component(d) for d in shape)
+    return tuple(_preprocess_component(d) for d in shape)# if (isinstance(d, VeryLongAxis) or d > 1))
 
 
 def array(shape: Any, dtype: npt.DTypeLike) -> Array:
@@ -183,7 +184,12 @@ def _normalize_einsum_in_subscript(subscript: str,
             raise ValueError(f"Cannot parse '{acc}' in provided einsum"
                              f" '{subscript}'.")
 
-    if len(normalized_indices) != len(in_operand_shape):
+    print(normalized_indices)
+    print(in_operand_shape)
+    if len(normalized_indices) < len(in_operand_shape):
+        in_operand_shape = tuple([s for s in in_operand_shape if s != 1])
+
+    if (len(normalized_indices) != len(in_operand_shape)):# and (len(normalized_indices) != len(set(in_operand_shape) - {1})):
         raise ValueError(f"Subscript '{subscript}' doesn't match the dimensionality "
                          f"of corresponding operand ({len(in_operand_shape)}).")
 
@@ -295,7 +301,7 @@ def fused_einsum(subscripts: str,
 
     use_matrix = np.array(use_matrix)
 
-    # {{{ sanity checks
+     # {{{ sanity checks
 
     if use_matrix.ndim != 2:
         raise ValueError("``use_matrix`` is not a matrix.")
@@ -344,9 +350,14 @@ def fused_einsum(subscripts: str,
     size_param_op_shapes = []
     axis_to_dim: Dict[EinsumAxisAccess, ProcessedShapeComponentT] = {}
 
+    #if len(access_descriptors) != len(proc_op_shapes):
+    #    proc_op_shapes = set(proc_op_shapes) - {1}
+
     for axes, op_shape in szip(access_descriptors,
                                proc_op_shapes):
         size_param_op_shape = []
+        if len(axes) < len(op_shape):
+            op_shape = tuple([s for s in op_shape if s != 1])
         for axis, dim in szip(axes, op_shape):
             if axis in axis_to_dim:
                 if isinstance(dim, INT_CLASSES + (SizeParam,)):

@@ -16,7 +16,8 @@ from dataclasses import dataclass
 from typing import (TYPE_CHECKING, Optional, Callable,
                     Tuple, Any)
 from functools import cached_property
-from immutables import Map
+#from immutables import Map
+from immutabledict import immutabledict as Map
 from feinsum.einsum import FusedEinsum, INT_CLASSES, SizeParam
 from feinsum.cl_utils import ContextT
 

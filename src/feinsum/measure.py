@@ -14,7 +14,8 @@ import loopy as lp
 import pyopencl.array as cla
 
 from typing import Dict, Any, Optional, Mapping, Tuple
-from immutables import Map
+#from immutables import Map
+from immutabledict import immutabledict as Map
 from feinsum.einsum import (FusedEinsum, INT_CLASSES, SizeParam,
                             ContractionSchedule, IntegralT)
 from feinsum.typing import ToStr, TransformT
